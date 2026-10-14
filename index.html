@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2a44">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Time Box</title>
+<style>
+  :root{
+    --paper:#f7f3ea; --ink:#1f2a44; --muted:#7a7f8c; --line:#d9d2c3;
+    --accent:#e8a33d; --box:#fffdf8; --done:#9aa3b2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#14181f; --ink:#e9e4d8; --muted:#8b92a0; --line:#2c333f; --box:#1b2029; --done:#5d6574; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+  body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px)}
+  header{position:sticky;top:0;z-index:5;background:var(--paper);display:flex;align-items:center;
+    gap:8px;padding:12px 16px;border-bottom:2px solid var(--ink)}
+  header h1{font-size:13px;letter-spacing:.18em;text-transform:uppercase;margin:0;font-weight:800}
+  .date{flex:1;text-align:center;font-weight:600;font-size:15px}
+  .date small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+  button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:8px;
+    min-width:40px;height:40px;cursor:pointer}
+  button:active{background:var(--line)}
+  main{padding:16px;max-width:720px;margin:0 auto}
+  h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin:20px 0 8px;color:var(--muted);font-weight:700}
+  .card{background:var(--box);border:1.5px solid var(--ink);border-radius:4px}
+  .prio{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+  .prio:last-child{border-bottom:0}
+  .prio .n{width:36px;text-align:center;font-weight:800;color:var(--accent)}
+  input[type=text],textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;width:100%}
+  .prio input[type=text]{padding:12px 8px 12px 0;font-size:16px}
+  .chk{width:22px;height:22px;margin:0 12px;accent-color:var(--accent);flex:none}
+  .prio.done input[type=text]{text-decoration:line-through;color:var(--done)}
+  textarea{display:block;min-height:140px;padding:12px;font-size:16px;line-height:1.5;resize:vertical;
+    background-image:repeating-linear-gradient(transparent 0 23px,var(--line) 23px 24px);background-position:0 11px}
+  .grid{display:grid;grid-template-columns:52px 1fr 1fr}
+  .grid .hd{font-size:10px;letter-spacing:.14em;color:var(--muted);text-align:center;padding:6px 0;
+    border-bottom:1.5px solid var(--ink);font-weight:700}
+  .hr{grid-column:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
+    border-bottom:1px solid var(--line);border-right:1.5px solid var(--ink)}
+  .hr.now{background:var(--accent);color:#1f2a44}
+  .slot{border-bottom:1px solid var(--line);min-height:44px;display:flex}
+  .slot+.slot{border-left:1px dashed var(--line)}
+  .slot input{padding:10px 8px;font-size:14px}
+  .slot.filled{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+  .row-last>*{border-bottom:0}
+  .bar{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+  .bar button{padding:0 14px;font-size:13px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);
+    padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <button id="prev" aria-label="Previous day">‹</button>
+  <div class="date" id="dateLbl"></div>
+  <button id="next" aria-label="Next day">›</button>
+  <button id="today" style="padding:0 10px;font-size:12px">Today</button>
+</header>
+<main>
+  <h2>Top Priorities</h2>
+  <div class="card" id="prios"></div>
+
+  <h2>Brain Dump</h2>
+  <div class="card"><textarea id="dump" placeholder="Everything on your mind…"></textarea></div>
+
+  <h2>Schedule</h2>
+  <div class="card"><div class="grid" id="grid"></div></div>
+
+  <div class="bar">
+    <button id="copyY">Copy from yesterday</button>
+    <button id="clear">Clear day</button>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const START=5, END=23, NPRIO=3;
+let cur=new Date(); cur.setHours(0,0,0,0);
+const $=id=>document.getElementById(id);
+const key=d=>'tb-'+d.toISOString().slice(0,10).replace(/T.*/,'') ;
+function dkey(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),a=String(d.getDate()).padStart(2,'0');return `tb-${y}-${m}-${a}`}
+function load(d){try{return JSON.parse(localStorage.getItem(dkey(d)))||blank()}catch(e){return blank()}}
+function blank(){return{p:Array(NPRIO).fill(''),pd:Array(NPRIO).fill(false),dump:'',s:{}}}
+let data;
+function save(){try{localStorage.setItem(dkey(cur),JSON.stringify(data))}catch(e){}}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1400)}
+function fmtH(h){const s=h%12||12;return s+(h<12?'a':'p')}
+
+function render(){
+  data=load(cur);
+  const t=new Date();t.setHours(0,0,0,0);
+  const isToday=cur.getTime()===t.getTime();
+  $('dateLbl').innerHTML=cur.toLocaleDateString(undefined,{weekday:'long'})+
+    `<small>${cur.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}${isToday?' · Today':''}</small>`;
+
+  const P=$('prios');P.innerHTML='';
+  for(let i=0;i<NPRIO;i++){
+    const r=document.createElement('div');r.className='prio'+(data.pd[i]?' done':'');
+    r.innerHTML=`<span class="n">${i+1}</span><input type="text" placeholder="Priority ${i+1}"><input type="checkbox" class="chk" aria-label="Done">`;
+    const [inp,chk]=r.querySelectorAll('input');
+    inp.value=data.p[i]||'';chk.checked=!!data.pd[i];
+    inp.oninput=()=>{data.p[i]=inp.value;save()};
+    chk.onchange=()=>{data.pd[i]=chk.checked;r.classList.toggle('done',chk.checked);save()};
+    P.appendChild(r);
+  }
+  $('dump').value=data.dump||'';
+
+  const G=$('grid');G.innerHTML='<div class="hd"></div><div class="hd">:00</div><div class="hd">:30</div>';
+  const nowH=new Date().getHours();
+  for(let h=START;h<=END;h++){
+    const last=h===END?' row-last':'';
+    const hr=document.createElement('div');hr.className='hr'+(isToday&&h===nowH?' now':'');hr.textContent=fmtH(h);
+    if(h===END)hr.style.borderBottom='0';
+    G.appendChild(hr);
+    for(const m of ['00','30']){
+      const k=h+':'+m, c=document.createElement('div');c.className='slot';
+      if(h===END)c.style.borderBottom='0';
+      const inp=document.createElement('input');inp.type='text';inp.value=data.s[k]||'';
+      if(inp.value)c.classList.add('filled');
+      inp.oninput=()=>{if(inp.value)data.s[k]=inp.value;else delete data.s[k];c.classList.toggle('filled',!!inp.value);save()};
+      c.appendChild(inp);G.appendChild(c);
+    }
+    if(isToday&&h===nowH)setTimeout(()=>hr.scrollIntoView({block:'center'}),0);
+  }
+}
+$('dump').oninput=e=>{data.dump=e.target.value;save()};
+const shift=n=>{cur.setDate(cur.getDate()+n);render();window.scrollTo(0,0)};
+$('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);
+$('today').onclick=()=>{cur=new Date();cur.setHours(0,0,0,0);render()};
+$('clear').onclick=()=>{if(confirm('Clear everything on this day?')){data=blank();save();render();toast('Cleared')}};
+$('copyY').onclick=()=>{
+  const y=new Date(cur);y.setDate(y.getDate()-1);const yd=load(y);
+  data.p=data.p.map((v,i)=>v||(!yd.pd[i]?yd.p[i]:'')||'');
+  if(!data.dump)data.dump=yd.dump;save();render();toast('Carried over unfinished items');
+};
+// swipe left/right to change days
+let sx=null;document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx;
+  if(Math.abs(dx)>90&&!e.target.closest('input,textarea'))shift(dx<0?1:-1);sx=null});
+render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
