@@ -75,6 +75,13 @@
   <h2>Schedule</h2>
   <div class="card"><div class="grid" id="grid"></div></div>
 
+  <div class="bar" id="notifBar" style="display:none;justify-content:space-between;align-items:center">
+    <span id="notifStat" style="font-size:12px;color:var(--muted)">Setting up reminders…</span>
+    <span style="display:flex;gap:8px">
+      <button id="exactBtn" style="display:none">Allow exact alarms</button>
+      <button id="testBtn">Test 🔔</button>
+    </span>
+  </div>
   <div class="bar">
     <button id="copyY">Copy from yesterday</button>
     <button id="clear">Clear day</button>
@@ -86,7 +93,6 @@
 const START=5, END=23, NPRIO=3;
 let cur=new Date(); cur.setHours(0,0,0,0);
 const $=id=>document.getElementById(id);
-const key=d=>'tb-'+d.toISOString().slice(0,10).replace(/T.*/,'') ;
 function dkey(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),a=String(d.getDate()).padStart(2,'0');return `tb-${y}-${m}-${a}`}
 function load(d){try{return JSON.parse(localStorage.getItem(dkey(d)))||blank()}catch(e){return blank()}}
 function blank(){return{p:Array(NPRIO).fill(''),pd:Array(NPRIO).fill(false),dump:'',s:{}}}
@@ -147,7 +153,86 @@ let sx=null;document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},
 document.addEventListener('touchend',e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx;
   if(Math.abs(dx)>90&&!e.target.closest('input,textarea'))shift(dx<0?1:-1);sx=null});
 render();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+
+/* ---------- Notifications (native Android app only) ---------- */
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const LN = NATIVE ? window.Capacitor.Plugins.LocalNotifications : null;
+const LEAD_MIN = 5, DAYS_AHEAD = 7, CH = 'timebox-blocks';
+
+// Build the list of block starts: a block = a filled slot whose text differs from the slot before it
+function blockStarts(d){
+  const dd = load(d), out = [];
+  let prev = '';
+  for(let h=START; h<=END; h++) for(const m of ['00','30']){
+    const txt = (dd.s[h+':'+m]||'').trim();
+    if(txt && txt.toLowerCase() !== prev.toLowerCase()){
+      const at = new Date(d); at.setHours(h, +m, 0, 0);
+      out.push({at, txt, slot: (h-START)*2 + (m==='30'?1:0)});
+    }
+    prev = txt;
+  }
+  return out;
+}
+function fmtTime(d){return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}
+
+let schedTimer = null, schedBusy = false;
+function queueSchedule(){ if(!LN) return; clearTimeout(schedTimer); schedTimer = setTimeout(reschedule, 1500); }
+async function reschedule(){
+  if(!LN || schedBusy) return; schedBusy = true;
+  try{
+    const pend = await LN.getPending();
+    if(pend.notifications.length) await LN.cancel({notifications: pend.notifications.map(n=>({id:n.id}))});
+    const now = Date.now(), list = [];
+    const base = new Date(); base.setHours(0,0,0,0);
+    for(let i=0; i<DAYS_AHEAD; i++){
+      const d = new Date(base); d.setDate(d.getDate()+i);
+      for(const b of blockStarts(d)){
+        const idBase = (i*100 + b.slot) * 2 + 1;            // unique small ints
+        const pre = new Date(b.at.getTime() - LEAD_MIN*60000);
+        if(pre.getTime() > now) list.push({id:idBase, channelId:CH, title:`In ${LEAD_MIN} min: ${b.txt}`,
+          body:`Starts at ${fmtTime(b.at)}`, schedule:{at:pre, allowWhileIdle:true}});
+        if(b.at.getTime() > now) list.push({id:idBase+1, channelId:CH, title:`Start now: ${b.txt}`,
+          body:`${fmtTime(b.at)} block`, schedule:{at:b.at, allowWhileIdle:true}});
+      }
+    }
+    if(list.length) await LN.schedule({notifications: list});
+    updateBell(list.length);
+  }catch(e){ console.error(e); updateBell(-1); }
+  schedBusy = false;
+}
+function updateBell(n){
+  const el = $('notifStat'); if(!el) return;
+  el.textContent = n < 0 ? 'Reminders: error — tap Test' :
+    n === 0 ? 'No upcoming reminders' : `${n} reminder${n>1?'s':''} scheduled`;
+}
+async function initNotifications(){
+  if(!LN){ return; }
+  $('notifBar').style.display = 'flex';
+  try{
+    await LN.createChannel({id:CH, name:'Time blocks', description:'Heads-up and start alerts',
+      importance:5, visibility:1, vibration:true});
+    const p = await LN.requestPermissions();
+    if(p.display !== 'granted'){ $('notifStat').textContent = 'Notifications blocked — enable in Settings'; return; }
+    const ex = await LN.checkExactNotificationSetting().catch(()=>({exact_alarm:'granted'}));
+    if(ex.exact_alarm && ex.exact_alarm !== 'granted') $('exactBtn').style.display = '';
+  }catch(e){ console.error(e); }
+  reschedule();
+}
+$('testBtn').onclick = async ()=>{
+  if(!LN) return;
+  await LN.schedule({notifications:[{id:999999, channelId:CH, title:'Time Box test', body:'Notifications are working.',
+    schedule:{at:new Date(Date.now()+10000), allowWhileIdle:true}}]});
+  toast('Test fires in 10 seconds — lock your phone');
+};
+$('exactBtn').onclick = async ()=>{ await LN.changeExactNotificationSetting(); $('exactBtn').style.display='none'; reschedule(); };
+
+// hook into every save
+const _save = save;
+save = function(){ _save(); queueSchedule(); };
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ render(); reschedule(); } });
+initNotifications();
+
+if(!NATIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body>
 </html>
