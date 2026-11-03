@@ -77,19 +77,49 @@
   .add input{padding:10px 4px;font-size:15px}
   .empty{padding:14px 12px 4px;color:var(--muted);font-size:13px}
 
-  /* schedule */
-  .grid{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}
-  .grid .hd{font-size:10px;letter-spacing:.14em;color:var(--muted);text-align:center;padding:6px 0;
-    border-bottom:1.5px solid var(--ink);font-weight:700}
-  .hr{grid-column:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
-    border-bottom:1px solid var(--line);border-right:1.5px solid var(--ink)}
-  .hr.now{background:var(--accent);color:#1f2a44}
-  .slot{border-bottom:1px solid var(--line);min-height:48px;display:flex;align-items:stretch;min-width:0}
-  .slot+.slot{border-left:1px dashed var(--line)}
-  .slot input{padding:10px 6px 10px 2px;font-size:14px}
-  .slot .grip{width:22px}
-  .slot.filled{background:color-mix(in srgb,var(--accent) 16%,transparent)}
-  .slot:not(.filled) input{padding-left:8px}
+  /* schedule timeline */
+  .tl{position:relative}
+  .row{height:48px;display:flex;border-bottom:1px dashed var(--line)}
+  .row.h30{border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .lbl{width:52px;flex:none;border-right:1.5px solid var(--ink);padding:5px 0 0 8px;font-size:13px;font-weight:700}
+  .row.h30 .lbl{font-size:10.5px;font-weight:500;color:var(--muted)}
+  .row.nowrow .lbl{background:var(--accent);color:#1f2a44}
+  .row .area{flex:1;cursor:text}
+  .blk{position:absolute;left:58px;right:6px;z-index:2;border-radius:9px;overflow:hidden;
+    background:color-mix(in srgb,var(--accent) 22%,var(--box));border:1.5px solid var(--accent);
+    display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .blk .top{display:flex;align-items:center;min-height:38px}
+  .blk .top input{padding:8px 4px;font-size:14px;font-weight:600}
+  .blk .grip{width:28px}
+  .blk .tm{flex:none;border:0;height:28px;min-width:0;padding:0 8px;margin-right:2px;font-size:11px;color:var(--muted);
+    border-radius:6px;white-space:nowrap}
+  .blk .tm:active{background:color-mix(in srgb,var(--accent) 30%,transparent)}
+  .blk .rs{position:absolute;left:0;right:0;bottom:0;height:16px;touch-action:none;cursor:ns-resize;
+    display:flex;align-items:center;justify-content:center}
+  .blk .rs::before{content:"";width:34px;height:4px;border-radius:2px;background:var(--accent);opacity:.9}
+  .blk.resizing{box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:4}
+  .blk.new{border-style:dashed;background:var(--box)}
+  .dropPrev{position:absolute;left:58px;right:6px;z-index:3;pointer-events:none;display:none;border-radius:9px;
+    border:2px dashed var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);
+    font-size:11px;font-weight:700;color:var(--ink);padding:4px 8px}
+  .nowline{position:absolute;left:52px;right:0;height:2px;background:#e5484d;z-index:5;pointer-events:none}
+  .nowline::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#e5484d}
+
+  /* duration sheet */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:70;display:none}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:71;background:var(--box);border-top:2px solid var(--ink);
+    border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));display:none;
+    max-width:620px;margin:0 auto}
+  .sheet.show,.scrim.show{display:block}
+  .sheet .st{font-weight:700;font-size:16px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sheet .ss{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips button{padding:0 14px;font-size:14px;font-weight:600}
+  .chips button.on{background:var(--accent);border-color:var(--accent);color:#1f2a44}
+  .sheet .acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .sheet .acts button{padding:0 12px;font-size:13px}
+  .sheet .acts .grow{flex:1}
 
   /* drag feedback */
   .ghost{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--paper);padding:10px 14px;
@@ -152,11 +182,23 @@
 
   <section class="panel" id="panel1">
     <h2>Schedule</h2>
-    <div class="card"><div class="grid" id="grid"></div></div>
+    <div class="card"><div class="tl" id="tl"></div></div>
   </section>
 </div>
 <div class="edge l" id="edgeL"></div><div class="edge r" id="edgeR"></div>
 <div class="toast" id="toast"></div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="st" id="shTitle"></div>
+  <div class="ss" id="shSub"></div>
+  <div class="chips" id="chips"></div>
+  <div class="acts">
+    <button id="shDump">↩ Back to brain dump</button>
+    <button id="shDel">Delete</button>
+    <span class="grow"></span>
+    <button id="shDone">Done</button>
+  </div>
+</div>
 
 <script>
 const START=5, END=23, NPRIO=3;
@@ -216,32 +258,137 @@ function render(scrollToNow){
   });
   $('dumpCard').dataset.drop='d:'+data.d.length;
 
-  // schedule
-  const G=$('grid');G.innerHTML='<div class="hd"></div><div class="hd">:00</div><div class="hd">:30</div>';
-  const nowH=new Date().getHours(); let nowRow=null;
-  for(let h=START;h<=END;h++){
-    const hr=document.createElement('div');hr.className='hr'+(isToday&&h===nowH?' now':'');hr.textContent=fmtH(h);
-    if(h===END)hr.style.borderBottom='0';
-    if(isToday&&h===nowH)nowRow=hr;
-    G.appendChild(hr);
-    for(const m of ['00','30']){
-      const k=h+':'+m, c=document.createElement('div');c.className='slot';c.dataset.drop='s:'+k;
-      if(h===END)c.style.borderBottom='0';
-      const g=document.createElement('span');g.className='grip';
-      const inp=document.createElement('input');inp.type='text';inp.value=data.s[k]||'';
-      const sync=()=>{c.classList.toggle('filled',!!inp.value);g.classList.toggle('off',!inp.value);g.style.display=inp.value?'':'none'};
-      sync();
-      inp.oninput=()=>{if(inp.value)data.s[k]=inp.value;else delete data.s[k];sync();save()};
-      g.onpointerdown=e=>startDrag(e,{t:'s',k},c);
-      c.append(g,inp);G.appendChild(c);
-    }
-  }
+  // schedule timeline
+  renderTimeline(isToday);
   if(scrollToNow){
-    const p=panels[1];
-    p.scrollTop = nowRow ? Math.max(0,nowRow.offsetTop - p.clientHeight/3) : 0;
+    const p=panels[1], tl=$('tl');
+    p.scrollTop = isToday ? Math.max(0, tl.offsetTop + nowTop() - p.clientHeight/3) : 0;
     panels[0].scrollTop=0;
   }
 }
+
+/* ---------- timeline helpers ---------- */
+const FIRST=START*2, LAST=END*2+1, RH=48;           // slot = half-hour index of the day
+const key=k=>Math.floor(k/2)+':'+(k%2?'30':'00');
+const sv=k=>(data.s[key(k)]||'').trim();
+const same=(a,b)=>a&&a.toLowerCase()===b.toLowerCase();
+function fmtS(k){const h=Math.floor(k/2)%24,m=k%2?'30':'00',h12=h%12||12;return `${h12}:${m}${h<12?'a':'p'}`}
+function fmtLen(n){const h=Math.floor(n/2),m=n%2?30:0;return (h?h+'h':'')+(h&&m?' ':'')+(m?m+'m':'')}
+function blocksOf(){
+  const out=[];let k=FIRST;
+  while(k<=LAST){const t=sv(k);if(!t){k++;continue}let e=k;while(e<LAST&&same(sv(e+1),t))e++;
+    out.push({start:k,len:e-k+1,text:t});k=e+1}
+  return out;
+}
+const blockAt=k=>blocksOf().find(b=>k>=b.start&&k<b.start+b.len);
+function clearRange(st,len){for(let k=st;k<st+len;k++)delete data.s[key(k)]}
+// write a block; any block it completely covers is sent back to the brain dump (nothing gets lost)
+function place(start,len,text){
+  start=Math.max(FIRST,Math.min(start,LAST)); len=Math.max(1,Math.min(len,LAST-start+1));
+  const bumped=[];
+  for(const b of blocksOf()) if(b.start>=start&&b.start+b.len<=start+len&&!same(b.text,text)){bumped.push(b.text);data.d.push(b.text)}
+  for(let k=start;k<start+len;k++)data.s[key(k)]=text;
+  return bumped;
+}
+function nowTop(){const n=new Date();return ((n.getHours()*60+n.getMinutes())-START*60)/30*RH}
+
+function renderTimeline(isToday){
+  const T=$('tl');T.innerHTML='';
+  const nowK=Math.floor((new Date().getHours()*60+new Date().getMinutes())/30);
+  for(let k=FIRST;k<=LAST;k++){
+    const r=document.createElement('div');r.className='row'+(k%2?' h30':'')+(isToday&&Math.floor(k/2)===Math.floor(nowK/2)&&k%2===0?' nowrow':'');
+    r.innerHTML=`<div class="lbl">${k%2?fmtS(k).replace(/[ap]$/,''):fmtH(k/2)}</div><div class="area"></div>`;
+    r.querySelector('.area').onclick=()=>{if(Date.now()-lastDragEnd>400)openNew(k)};
+    T.appendChild(r);
+  }
+  T.dataset.drop='tl';
+  for(const b of blocksOf()){
+    const el=document.createElement('div');el.className='blk';
+    el.style.top=((b.start-FIRST)*RH+2)+'px';el.style.height=(b.len*RH-4)+'px';
+    el.innerHTML='<div class="top"><span class="grip"></span><input type="text"><button class="tm"></button></div><div class="rs" aria-label="Drag to change length"></div>';
+    const inp=el.querySelector('input'),tm=el.querySelector('.tm');
+    inp.value=b.text; tm.textContent=`${fmtS(b.start)}–${fmtS(b.start+b.len)} · ${fmtLen(b.len)}`;
+    inp.oninput=()=>{const v=inp.value; if(v.trim()) for(let k=b.start;k<b.start+b.len;k++)data.s[key(k)]=v; save()};
+    inp.onblur=()=>{if(!inp.value.trim()){clearRange(b.start,b.len);save();render()}};
+    inp.onkeydown=e=>{if(e.key==='Enter')inp.blur()};
+    tm.onclick=()=>openSheet(b);
+    el.querySelector('.grip').onpointerdown=e=>startDrag(e,{t:'s',start:b.start,len:b.len,text:b.text,off:0},el);
+    el.querySelector('.rs').onpointerdown=e=>startResize(e,b,el);
+    T.appendChild(el);
+  }
+  const pv=document.createElement('div');pv.className='dropPrev';pv.id='dropPrev';T.appendChild(pv);
+  if(isToday){const t=nowTop();if(t>=0&&t<=(LAST-FIRST+1)*RH){const nl=document.createElement('div');nl.className='nowline';nl.id='nowline';nl.style.top=t+'px';T.appendChild(nl)}}
+}
+setInterval(()=>{const nl=$('nowline');if(nl)nl.style.top=nowTop()+'px'},60000);
+
+// tap an empty row → type a new task there
+function openNew(k){
+  const T=$('tl');const old=T.querySelector('.blk.new');if(old)old.remove();
+  const el=document.createElement('div');el.className='blk new';
+  el.style.top=((k-FIRST)*RH+2)+'px';el.style.height=(RH-4)+'px';
+  el.innerHTML=`<div class="top"><span class="grip off"></span><input type="text" placeholder="New task at ${fmtS(k)}" enterkeyhint="done"></div>`;
+  T.appendChild(el);const inp=el.querySelector('input');inp.focus();
+  let done=false;const commit=()=>{if(done)return;done=true;const v=inp.value.trim();
+    if(v){place(k,1,v);save();toast('Added — drag the bottom edge to lengthen')}render()};
+  inp.onkeydown=e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){done=true;render()}};
+  inp.onblur=commit;
+}
+
+/* ---------- resize by dragging a block's bottom edge ---------- */
+let rz=null, lastDragEnd=0;
+function startResize(e,b,el){
+  e.preventDefault();e.stopPropagation();
+  document.activeElement&&document.activeElement.blur&&document.activeElement.blur();
+  rz={b,el,id:e.pointerId,y:e.clientY,end:b.start+b.len,raf:0};
+  el.classList.add('resizing');document.body.classList.add('dragging');
+  addEventListener('pointermove',rzMove,{passive:false});addEventListener('pointerup',rzEnd);addEventListener('pointercancel',rzEnd);
+  rz.raf=requestAnimationFrame(rzTick);if(navigator.vibrate)navigator.vibrate(10);
+}
+function rzCalc(){
+  const top=$('tl').getBoundingClientRect().top;
+  const end=Math.max(rz.b.start+1,Math.min(LAST+1,FIRST+Math.round((rz.y-top)/RH)));
+  if(end!==rz.end&&navigator.vibrate)navigator.vibrate(5);
+  rz.end=end;const n=end-rz.b.start;
+  rz.el.style.height=(n*RH-4)+'px';
+  rz.el.querySelector('.tm').textContent=`${fmtS(rz.b.start)}–${fmtS(end)} · ${fmtLen(n)}`;
+}
+function rzMove(e){if(!rz||e.pointerId!==rz.id)return;e.preventDefault();rz.y=e.clientY;rzCalc()}
+function rzTick(){if(!rz)return;const p=panels[1],r=p.getBoundingClientRect(),Z=70;let dy=0;
+  if(rz.y>r.bottom-Z)dy=Math.ceil((rz.y-(r.bottom-Z))/5);else if(rz.y<r.top+Z)dy=-Math.ceil((r.top+Z-rz.y)/5);
+  if(dy){p.scrollTop+=dy;rzCalc()}rz.raf=requestAnimationFrame(rzTick)}
+function rzEnd(){
+  if(!rz)return;removeEventListener('pointermove',rzMove);removeEventListener('pointerup',rzEnd);removeEventListener('pointercancel',rzEnd);
+  cancelAnimationFrame(rz.raf);document.body.classList.remove('dragging');lastDragEnd=Date.now();
+  const {b,end}=rz;rz=null;setLen(b,end-b.start);
+}
+function setLen(b,n){
+  n=Math.max(1,Math.min(n,LAST-b.start+1));let bumped=[];
+  if(n<b.len)clearRange(b.start+n,b.len-n);else if(n>b.len)bumped=place(b.start,n,b.text);
+  save();render();
+  toast(`${b.text}: ${fmtS(b.start)}–${fmtS(b.start+n)}`+(bumped.length?` · ${bumped.join(', ')} → brain dump`:''));
+}
+
+/* ---------- duration sheet (tap a block's time) ---------- */
+let sheetB=null;
+function openSheet(b){
+  sheetB=b;$('shTitle').textContent=b.text;
+  const C=$('chips');C.innerHTML='';
+  const sub=()=>{$('shSub').textContent=`${fmtS(sheetB.start)} – ${fmtS(sheetB.start+sheetB.len)} · ${fmtLen(sheetB.len)}`};
+  const opts=[1,2,3,4,5,6,8];
+  const draw=()=>{C.innerHTML='';sub();
+    const mk=(lbl,fn,on)=>{const x=document.createElement('button');x.textContent=lbl;if(on)x.classList.add('on');x.onclick=fn;C.appendChild(x)};
+    mk('−',()=>apply(sheetB.len-1));
+    for(const n of opts)mk(fmtLen(n),()=>apply(n),n===sheetB.len);
+    mk('+',()=>apply(sheetB.len+1));
+  };
+  const apply=n=>{n=Math.max(1,Math.min(n,LAST-sheetB.start+1));if(n===sheetB.len)return;
+    setLen(sheetB,n);sheetB=blockAt(sheetB.start)||sheetB;draw()};
+  draw();$('sheet').classList.add('show');$('scrim').classList.add('show');
+}
+function closeSheet(){$('sheet').classList.remove('show');$('scrim').classList.remove('show');sheetB=null}
+$('scrim').onclick=closeSheet;$('shDone').onclick=closeSheet;
+$('shDel').onclick=()=>{if(sheetB){clearRange(sheetB.start,sheetB.len);save();render();toast('Deleted')}closeSheet()};
+$('shDump').onclick=()=>{if(sheetB){clearRange(sheetB.start,sheetB.len);data.d.push(sheetB.text);save();render();toast('Moved to brain dump')}closeSheet()};
 
 /* ---------- panel paging ---------- */
 let curPanel=0;
@@ -254,7 +401,7 @@ addEventListener('resize',()=>{if(isPaged())pager.scrollLeft=curPanel*pager.clie
 
 /* ---------- drag & drop ---------- */
 let drag=null;
-function srcText(s){return s.t==='p'?data.p[s.i]:s.t==='d'?data.d[s.i]:data.s[s.k]}
+function srcText(s){return s.text!=null?s.text:s.t==='p'?data.p[s.i]:data.d[s.i]}
 function startDrag(e,src,el){
   const text=(srcText(src)||'').trim(); if(!text) return;
   e.preventDefault(); document.activeElement&&document.activeElement.blur&&document.activeElement.blur();
@@ -268,16 +415,28 @@ function startDrag(e,src,el){
 function moveGhost(){drag.ghost.style.left=Math.min(Math.max(drag.x,70),innerWidth-70)+'px';drag.ghost.style.top=drag.y+'px'}
 function onMove(e){if(!drag||e.pointerId!==drag.id)return;e.preventDefault();drag.x=e.clientX;drag.y=e.clientY;moveGhost();hitTest()}
 function clearOver(){if(drag&&drag.over){drag.over.classList.remove('over','ins-before','ins-after');drag.over=null}}
+function hidePrev(){const pv=$('dropPrev');if(pv)pv.style.display='none'}
 function hitTest(){
   const el=document.elementFromPoint(drag.x,drag.y); const tgt=el&&el.closest('[data-drop]');
-  clearOver(); drag.pos=null; if(!tgt||tgt===drag.el)return;
-  const [t,v]=tgt.dataset.drop.split(':').length>2?[tgt.dataset.drop[0],tgt.dataset.drop.slice(2)]:tgt.dataset.drop.split(':');
+  clearOver(); hidePrev(); drag.pos=null; if(!tgt||tgt===drag.el)return;
+  const dd=tgt.dataset.drop;
+  if(dd==='tl'){                                   // schedule: slot from finger position
+    const r=tgt.getBoundingClientRect();
+    let k=FIRST+Math.floor((drag.y-r.top)/RH)-(drag.src.off||0);
+    const len=drag.src.t==='s'?drag.src.len:1;
+    k=Math.max(FIRST,Math.min(k,LAST-len+1));
+    let st=k,n=len,label='';
+    if(drag.src.t!=='s'){const B=blockAt(k);if(B){st=B.start;n=B.len;label='Replace '+B.text}}
+    const pv=$('dropPrev');pv.style.display='block';pv.style.top=((st-FIRST)*RH+2)+'px';pv.style.height=(n*RH-4)+'px';
+    pv.textContent=label||`${fmtS(st)}–${fmtS(st+n)}`;
+    drag.pos={t:'s',k};return;
+  }
+  const [t,v]=dd.split(':');
   if(t==='d'&&tgt.classList.contains('item')){
     const r=tgt.getBoundingClientRect(), after=drag.y>r.top+r.height/2;
     tgt.classList.add(after?'ins-after':'ins-before'); drag.pos={t:'d',i:+v+(after?1:0)};
   }else{
-    tgt.classList.add('over');
-    drag.pos=t==='d'?{t:'d',i:+v}:t==='p'?{t:'p',i:+v}:{t:'s',k:v};
+    tgt.classList.add('over'); drag.pos=t==='d'?{t:'d',i:+v}:{t:'p',i:+v};
   }
   drag.over=tgt;
 }
@@ -299,7 +458,7 @@ function tick(now){
 }
 function cleanupDrag(){
   removeEventListener('pointermove',onMove);removeEventListener('pointerup',endDrag);removeEventListener('pointercancel',cancelDrag);
-  cancelAnimationFrame(drag.raf);clearOver();drag.ghost.remove();drag.el.classList.remove('src');
+  cancelAnimationFrame(drag.raf);clearOver();hidePrev();lastDragEnd=Date.now();drag.ghost.remove();drag.el.classList.remove('src');
   document.body.classList.remove('dragging');$('edgeL').classList.remove('show');$('edgeR').classList.remove('show');
   if(isPaged())goPanel(curPanel); // re-snap
 }
@@ -309,28 +468,33 @@ function endDrag(e){
   const {src,pos,text}=drag; cleanupDrag(); drag=null;
   if(pos){applyDrop(src,pos,text);save();render();}
 }
-function getV(x){return x.t==='p'?(data.p[x.i]||''):x.t==='s'?(data.s[x.k]||''):''}
-function setV(x,v){
-  if(x.t==='p'){data.p[x.i]=v;data.pd[x.i]=false}
-  else if(x.t==='s'){if(v)data.s[x.k]=v;else delete data.s[x.k]}
-}
+function clearSrc(src){if(src.t==='p'){data.p[src.i]='';data.pd[src.i]=false}else if(src.t==='s')clearRange(src.start,src.len)}
 function applyDrop(src,tgt,text){
-  if(tgt.t==='d'){                       // into brain dump at position
+  if(tgt.t==='d'){                                   // into brain dump at a position
     let i=tgt.i;
-    if(src.t==='d'){ if(src.i<i)i--; data.d.splice(src.i,1); }
-    else setV(src,'');
-    data.d.splice(i,0,text); return toast(src.t==='d'?'Reordered':'Moved to brain dump');
+    if(src.t==='d'){if(src.i<i)i--;data.d.splice(src.i,1)} else clearSrc(src);
+    data.d.splice(i,0,text);return toast(src.t==='d'?'Reordered':'Moved to brain dump');
   }
-  if(src.t===tgt.t&&(src.i===tgt.i&&src.k===tgt.k))return;
-  const old=getV(tgt).trim();
-  if(tgt.t==='p'&&src.t==='p'){         // swap priorities (keep done flags)
-    const a=src.i,b=tgt.i;[data.p[a],data.p[b]]=[data.p[b],data.p[a]];[data.pd[a],data.pd[b]]=[data.pd[b],data.pd[a]];return;
+  if(tgt.t==='p'){                                   // onto a priority
+    if(src.t==='p'){if(src.i===tgt.i)return;const a=src.i,b=tgt.i;
+      [data.p[a],data.p[b]]=[data.p[b],data.p[a]];[data.pd[a],data.pd[b]]=[data.pd[b],data.pd[a]];return}
+    const old=(data.p[tgt.i]||'').trim();
+    if(src.t==='d'){data.d.splice(src.i,1);if(old)data.d.splice(src.i,0,old)}
+    else{clearSrc(src);if(old)data.d.push(old)}
+    data.p[tgt.i]=text;data.pd[tgt.i]=false;return;
   }
-  setV(tgt,text);
-  if(src.t==='d'){ data.d.splice(src.i,1); if(old)data.d.splice(src.i,0,old); }  // swap old value back into dump
-  else if(src.t==='p'&&tgt.t==='s'){ if(old)data.d.push(old); toast('Scheduled — priority kept'); return; } // copy priorities into schedule
-  else setV(src,old);                    // move / swap
-  if(tgt.t==='s')toast(old?'Swapped':'Scheduled');
+  const k=tgt.k;                                     // onto the schedule
+  if(src.t==='s'){
+    if(k===src.start)return; clearRange(src.start,src.len);
+    const bumped=place(k,src.len,text);
+    return toast(`Moved to ${fmtS(k)}`+(bumped.length?` · ${bumped.join(', ')} → brain dump`:''));
+  }
+  const B=blockAt(k);let old='';
+  if(B){old=B.text;for(let j=B.start;j<B.start+B.len;j++)data.s[key(j)]=text}
+  else place(k,1,text);
+  if(src.t==='d'){data.d.splice(src.i,1);if(old)data.d.splice(src.i,0,old)}
+  else if(old)data.d.push(old);
+  toast(old?`Replaced ${old} (→ brain dump)`:src.t==='p'?'Scheduled · priority kept':'Scheduled · drag the bottom edge to lengthen');
 }
 
 /* ---------- controls ---------- */
