@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/timebox_widget_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TIME BOX"
+            android:textColor="#E8A33D"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15" />
+        <TextView
+            android:id="@+id/w_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:textColor="#7A7F8C"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView style="@style/TimeBoxWidgetLabel" android:text="NOW" android:layout_marginTop="8dp" />
+    <TextView
+        android:id="@+id/w_now"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#1F2A44"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/w_now_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#7A7F8C"
+        android:textSize="12sp" />
+
+    <TextView style="@style/TimeBoxWidgetLabel" android:text="UP NEXT" android:layout_marginTop="10dp" />
+    <TextView android:id="@+id/w_next1" style="@style/TimeBoxWidgetLine" />
+    <TextView android:id="@+id/w_next2" style="@style/TimeBoxWidgetLine" />
+    <TextView android:id="@+id/w_next3" style="@style/TimeBoxWidgetLine" />
+    <TextView android:id="@+id/w_next_empty" style="@style/TimeBoxWidgetLine"
+        android:text="Nothing else scheduled" android:textColor="#7A7F8C" />
+
+    <TextView style="@style/TimeBoxWidgetLabel" android:text="TOP PRIORITIES" android:layout_marginTop="10dp" />
+    <TextView android:id="@+id/w_p1" style="@style/TimeBoxWidgetLine" />
+    <TextView android:id="@+id/w_p2" style="@style/TimeBoxWidgetLine" />
+    <TextView android:id="@+id/w_p3" style="@style/TimeBoxWidgetLine" />
+    <TextView android:id="@+id/w_p_empty" style="@style/TimeBoxWidgetLine"
+        android:text="Tap to set your top 3" android:textColor="#7A7F8C" />
+</LinearLayout>

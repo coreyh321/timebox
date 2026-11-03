@@ -18,6 +18,30 @@ for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
   cp "mipmap-$d.png" "$RES/mipmap-$d/ic_launcher_round.png"
 done
 
+# home-screen widget (native code + resources)
+PKG=android/app/src/main/java/io/github/coreyh321/timebox
+cp MainActivity.java WidgetBridge.java TimeBoxWidget.java "$PKG/"
+mkdir -p "$RES/layout" "$RES/xml" "$RES/drawable" "$RES/values"
+cp timebox_widget.xml "$RES/layout/"
+cp timebox_widget_info.xml "$RES/xml/"
+cp timebox_widget_bg.xml "$RES/drawable/"
+cp timebox_widget_styles.xml "$RES/values/"
+python3 - "$M" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+rx = """
+        <receiver android:name=".TimeBoxWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/timebox_widget_info" />
+        </receiver>
+    </application>"""
+assert "</application>" in s
+s = s.replace("    </application>", rx.lstrip("\n"), 1)
+open(p, "w").write(s)
+PY
+
 npx cap sync android
 
 # same signing key every build, so updates install over the old app and keep your data
