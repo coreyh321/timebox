@@ -3,25 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1f2a44">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Time Box</title>
 <style>
   :root{
-    --paper:#f7f3ea; --ink:#1f2a44; --muted:#7a7f8c; --line:#d9d2c3;
-    --accent:#e8a33d; --box:#fffdf8; --done:#9aa3b2;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{ --paper:#14181f; --ink:#e9e4d8; --muted:#8b92a0; --line:#2c333f; --box:#1b2029; --done:#5d6574; }
+    --paper:#000000; --box:#000000; --ink:#ffffff; --muted:#a3abb8; --line:rgba(255,255,255,.32);
+    --line-soft:rgba(255,255,255,.16); --accent:#7cc4ff; --on-accent:#00131f; --done:#6b7280;
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);overflow:hidden;
     font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
   body{display:flex;flex-direction:column;height:100dvh;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-  body.dragging{user-select:none;-webkit-user-select:none}
+  body.dragging,body.dragging *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
   header{flex:none;background:var(--paper);display:flex;align-items:center;gap:8px;padding:10px 16px 8px}
   .date{flex:1;text-align:center;font-weight:600;font-size:15px}
   .date small{display:block;color:var(--muted);font-weight:500;font-size:11px}
@@ -55,13 +53,15 @@
   .card{background:var(--box);border:1.5px solid var(--ink);border-radius:4px}
   input[type=text]{font:inherit;color:inherit;background:transparent;border:0;outline:0;width:100%;min-width:0}
 
-  .grip{flex:none;width:30px;align-self:stretch;display:flex;align-items:center;justify-content:center;
-    color:var(--muted);touch-action:none;cursor:grab;font-size:14px;letter-spacing:-2px;opacity:.75}
-  .grip::before{content:"⋮⋮"}
+  .grip{flex:none;width:46px;align-self:stretch;display:flex;align-items:center;justify-content:center;
+    color:var(--ink);touch-action:none;cursor:grab}
+  .grip::before{content:"⋮⋮";font-size:18px;letter-spacing:-3px;line-height:1;padding:7px 9px 7px 6px;border-radius:8px;
+    background:rgba(255,255,255,.10);opacity:.85}
+  .grip:active::before{background:color-mix(in srgb,var(--accent) 40%,transparent)}
   .grip.off{visibility:hidden}
 
   /* priorities */
-  .prio{display:flex;align-items:center;border-bottom:1px solid var(--line);min-height:48px}
+  .prio{display:flex;align-items:center;border-bottom:1px solid var(--line);min-height:56px}
   .prio:last-child{border-bottom:0}
   .prio .n{width:18px;text-align:center;font-weight:800;color:var(--accent);flex:none}
   .prio input[type=text]{padding:12px 8px;font-size:16px}
@@ -69,36 +69,36 @@
   .prio.done input[type=text]{text-decoration:line-through;color:var(--done)}
 
   /* brain dump */
-  .item{display:flex;align-items:center;border-bottom:1px solid var(--line);min-height:44px;position:relative}
+  .item{display:flex;align-items:center;border-bottom:1px solid var(--line);min-height:54px;position:relative}
   .item input{padding:10px 4px;font-size:15px}
-  .item .x{border:0;min-width:36px;height:36px;color:var(--muted);font-size:18px}
-  .add{display:flex;align-items:center;min-height:44px}
-  .add::before{content:"+";width:30px;text-align:center;color:var(--accent);font-weight:800;flex:none}
+  .item .x{border:0;min-width:46px;height:46px;color:var(--muted);font-size:18px}
+  .add{display:flex;align-items:center;min-height:54px}
+  .add::before{content:"+";width:46px;text-align:center;color:var(--accent);font-weight:800;flex:none}
   .add input{padding:10px 4px;font-size:15px}
   .empty{padding:14px 12px 4px;color:var(--muted);font-size:13px}
 
   /* schedule timeline */
   .tl{position:relative}
-  .row{height:48px;display:flex;border-bottom:1px dashed var(--line)}
+  .row{height:56px;display:flex;border-bottom:1px dashed var(--line-soft)}
   .row.h30{border-bottom:1px solid var(--line)}
   .row:last-child{border-bottom:0}
   .row .lbl{width:52px;flex:none;border-right:1.5px solid var(--ink);padding:5px 0 0 8px;font-size:13px;font-weight:700}
   .row.h30 .lbl{font-size:10.5px;font-weight:500;color:var(--muted)}
-  .row.nowrow .lbl{background:var(--accent);color:#1f2a44}
+  .row.nowrow .lbl{background:var(--accent);color:var(--on-accent)}
   .row .area{flex:1;cursor:text}
   .blk{position:absolute;left:58px;right:6px;z-index:2;border-radius:9px;overflow:hidden;
-    background:color-mix(in srgb,var(--accent) 22%,var(--box));border:1.5px solid var(--accent);
-    display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-  .blk .top{display:flex;align-items:center;min-height:38px}
-  .blk .top input{padding:8px 4px;font-size:14px;font-weight:600}
-  .blk .grip{width:28px}
+    background:color-mix(in srgb,var(--accent) 24%,#000);border:1.5px solid var(--accent);
+    display:flex;flex-direction:column}
+  .blk .top{display:flex;align-items:center;min-height:46px}
+  .blk .top input{padding:8px 4px;font-size:15px;font-weight:600}
+  .blk .grip{width:44px}
   .blk .tm{flex:none;border:0;height:28px;min-width:0;padding:0 8px;margin-right:2px;font-size:11px;color:var(--muted);
     border-radius:6px;white-space:nowrap}
   .blk .tm:active{background:color-mix(in srgb,var(--accent) 30%,transparent)}
-  .blk .rs{position:absolute;left:0;right:0;bottom:0;height:16px;touch-action:none;cursor:ns-resize;
-    display:flex;align-items:center;justify-content:center}
-  .blk .rs::before{content:"";width:34px;height:4px;border-radius:2px;background:var(--accent);opacity:.9}
-  .blk.resizing{box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:4}
+  .blk .rs{position:absolute;left:25%;right:25%;bottom:0;height:22px;touch-action:none;cursor:ns-resize;
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px}
+  .blk .rs::before{content:"";width:48px;height:6px;border-radius:3px;background:var(--accent)}
+  .blk.resizing{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent);z-index:4}
   .blk.new{border-style:dashed;background:var(--box)}
   .dropPrev{position:absolute;left:58px;right:6px;z-index:3;pointer-events:none;display:none;border-radius:9px;
     border:2px dashed var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);
@@ -107,7 +107,7 @@
   .nowline::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#e5484d}
 
   /* duration sheet */
-  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:70;display:none}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:70;display:none}
   .sheet{position:fixed;left:0;right:0;bottom:0;z-index:71;background:var(--box);border-top:2px solid var(--ink);
     border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));display:none;
     max-width:620px;margin:0 auto}
@@ -116,15 +116,15 @@
   .sheet .ss{font-size:12px;color:var(--muted);margin-bottom:12px}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chips button{padding:0 14px;font-size:14px;font-weight:600}
-  .chips button.on{background:var(--accent);border-color:var(--accent);color:#1f2a44}
+  .chips button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
   .sheet .acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   .sheet .acts button{padding:0 12px;font-size:13px}
   .sheet .acts .grow{flex:1}
 
   /* drag feedback */
-  .ghost{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--paper);padding:10px 14px;
-    border-radius:10px;font-size:14px;font-weight:600;max-width:70vw;white-space:nowrap;overflow:hidden;
-    text-overflow:ellipsis;box-shadow:0 8px 24px rgba(0,0,0,.25);transform:translate(-50%,-130%) rotate(-2deg)}
+  .ghost{position:fixed;z-index:50;pointer-events:none;background:var(--accent);color:var(--on-accent);padding:12px 16px;
+    border-radius:12px;font-size:15px;font-weight:700;max-width:70vw;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;box-shadow:0 8px 28px rgba(124,196,255,.35);transform:translate(-50%,-140%) rotate(-2deg)}
   .src{opacity:.35}
   .over{outline:2px solid var(--accent);outline-offset:-2px;background:color-mix(in srgb,var(--accent) 28%,transparent)!important}
   .ins-before::before,.ins-after::after{content:"";position:absolute;left:8px;right:8px;height:3px;
@@ -138,7 +138,7 @@
   .bar{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
   .bar button{padding:0 14px;font-size:13px}
   .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
-    background:var(--ink);color:var(--paper);z-index:60;
+    background:var(--accent);color:var(--on-accent);font-weight:600;z-index:60;
     padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.show{opacity:1}
 </style>
@@ -161,7 +161,7 @@
     <h2>Top Priorities</h2>
     <div class="card" id="prios"></div>
 
-    <h2>Brain Dump <span class="hint">drag ⋮⋮ to schedule</span></h2>
+    <h2>Brain Dump <span class="hint">hold &amp; drag to schedule</span></h2>
     <div class="card" id="dumpCard">
       <div id="dumpList"></div>
       <div class="add" id="addRow"><input type="text" id="addInp" placeholder="Add a task…" enterkeyhint="done"></div>
@@ -239,6 +239,7 @@ function render(scrollToNow){
     inp.oninput=()=>{data.p[i]=inp.value;g.classList.toggle('off',!inp.value);save()};
     chk.onchange=()=>{data.pd[i]=chk.checked;r.classList.toggle('done',chk.checked);save()};
     g.onpointerdown=e=>startDrag(e,{t:'p',i},r);
+    armLongPress(r,()=>({t:'p',i}));
     P.appendChild(r);
   }
 
@@ -254,6 +255,7 @@ function render(scrollToNow){
     inp.onkeydown=e=>{if(e.key==='Enter')inp.blur()};
     r.querySelector('.x').onclick=()=>{data.d.splice(i,1);save();render()};
     r.querySelector('.grip').onpointerdown=e=>startDrag(e,{t:'d',i},r);
+    armLongPress(r,()=>({t:'d',i}));
     D.appendChild(r);
   });
   $('dumpCard').dataset.drop='d:'+data.d.length;
@@ -268,7 +270,7 @@ function render(scrollToNow){
 }
 
 /* ---------- timeline helpers ---------- */
-const FIRST=START*2, LAST=END*2+1, RH=48;           // slot = half-hour index of the day
+const FIRST=START*2, LAST=END*2+1, RH=56;           // slot = half-hour index of the day
 const key=k=>Math.floor(k/2)+':'+(k%2?'30':'00');
 const sv=k=>(data.s[key(k)]||'').trim();
 const same=(a,b)=>a&&a.toLowerCase()===b.toLowerCase();
@@ -314,6 +316,7 @@ function renderTimeline(isToday){
     tm.onclick=()=>openSheet(b);
     el.querySelector('.grip').onpointerdown=e=>startDrag(e,{t:'s',start:b.start,len:b.len,text:b.text,off:0},el);
     el.querySelector('.rs').onpointerdown=e=>startResize(e,b,el);
+    armLongPress(el,()=>({t:'s',start:b.start,len:b.len,text:b.text,off:0}));
     T.appendChild(el);
   }
   const pv=document.createElement('div');pv.className='dropPrev';pv.id='dropPrev';T.appendChild(pv);
@@ -401,6 +404,23 @@ addEventListener('resize',()=>{if(isPaged())pager.scrollLeft=curPanel*pager.clie
 
 /* ---------- drag & drop ---------- */
 let drag=null;
+// press and hold (≈0.3s) anywhere on a task to pick it up; quick taps still edit, swipes still scroll
+function armLongPress(el,getSrc){
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'||drag||rz)return;
+    if(e.target.closest('.grip,.rs,.tm,.x,.chk'))return;
+    const id=e.pointerId,sx=e.clientX,sy=e.clientY;let lx=sx,ly=sy;
+    const done=()=>{clearTimeout(t);removeEventListener('pointermove',mv);removeEventListener('pointerup',done);removeEventListener('pointercancel',done)};
+    const mv=ev=>{if(ev.pointerId!==id)return;lx=ev.clientX;ly=ev.clientY;if(Math.hypot(lx-sx,ly-sy)>10)done()};
+    const t=setTimeout(()=>{done();const src=getSrc();if(!(srcText(src)||'').trim())return;
+      try{getSelection().removeAllRanges()}catch(_){}
+      startDrag({clientX:lx,clientY:ly,pointerId:id,preventDefault(){}},src,el)},300);
+    addEventListener('pointermove',mv);addEventListener('pointerup',done);addEventListener('pointercancel',done);
+  });
+}
+document.addEventListener('touchmove',e=>{if(drag||rz)e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',e=>{if(drag||Date.now()-lastDragEnd<500)e.preventDefault()});
+document.addEventListener('focusin',e=>{if(Date.now()-lastDragEnd<450&&e.target.blur)e.target.blur()});
 function srcText(s){return s.text!=null?s.text:s.t==='p'?data.p[s.i]:data.d[s.i]}
 function startDrag(e,src,el){
   const text=(srcText(src)||'').trim(); if(!text) return;

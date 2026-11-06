@@ -1,5 +1,6 @@
 {
   "appId": "io.github.coreyh321.timebox",
   "appName": "Time Box",
-  "webDir": "www"
+  "webDir": "www",
+  "backgroundColor": "#000000"
 }

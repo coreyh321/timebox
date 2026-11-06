@@ -121,11 +121,11 @@ public class TimeBoxWidget extends AppWidgetProvider {
             while (end < 47 && same(txt(s, end + 1), cur)) end++;
             v.setTextViewText(R.id.w_now, cur);
             v.setTextViewText(R.id.w_now_time, fmt(start) + " – " + fmt(end + 1));
-            v.setTextColor(R.id.w_now, 0xFF1F2A44);
+            v.setTextColor(R.id.w_now, 0xFFFFFFFF);
         } else {
             v.setTextViewText(R.id.w_now, "Open time");
             v.setTextViewText(R.id.w_now_time, "Nothing scheduled right now");
-            v.setTextColor(R.id.w_now, 0xFF7A7F8C);
+            v.setTextColor(R.id.w_now, 0xFFA3ABB8);
         }
 
         // UP NEXT (rest of today, then tomorrow)
@@ -159,7 +159,7 @@ public class TimeBoxWidget extends AppWidgetProvider {
                 v.setViewVisibility(PRIO_IDS[i], View.GONE);
             } else {
                 v.setTextViewText(PRIO_IDS[i], (done ? "✓ " : (i + 1) + ".  ") + t);
-                v.setTextColor(PRIO_IDS[i], done ? 0xFF9AA3B2 : 0xFF1F2A44);
+                v.setTextColor(PRIO_IDS[i], done ? 0xFF6B7280 : 0xFFFFFFFF);
                 v.setViewVisibility(PRIO_IDS[i], View.VISIBLE);
                 shown++;
             }
