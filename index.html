@@ -528,9 +528,18 @@ $('today').onclick=()=>{cur=new Date();cur.setHours(0,0,0,0);render(true)};
 $('clear').onclick=()=>{if(confirm('Clear everything on this day?')){data=blank();save();render();toast('Cleared')}};
 $('copyY').onclick=()=>{
   const y=new Date(cur);y.setDate(y.getDate()-1);const yd=load(y);
-  data.p=data.p.map((v,i)=>v||(!yd.pd[i]?yd.p[i]:'')||'');
-  for(const it of yd.d) if(!data.d.includes(it)) data.d.push(it);
-  save();render();toast('Carried over unfinished items');
+  let np=0,nd=0,ns=0;
+  // priorities: fill empty slots (checkmarks reset)
+  for(let i=0;i<NPRIO;i++){const v=(yd.p[i]||'').trim();if(v&&!(data.p[i]||'').trim()){data.p[i]=v;data.pd[i]=false;np++}}
+  // brain dump: add anything not already there
+  for(const it of yd.d){const v=(it||'').trim();if(v&&!data.d.some(x=>same(x.trim(),v))){data.d.push(v);nd++}}
+  // schedule: copy every block into time that's still open today (never overwrites)
+  for(const [k,v] of Object.entries(yd.s)){if((v||'').trim()&&!(data.s[k]||'').trim()){data.s[k]=v;ns++}}
+  if(!np&&!nd&&!ns)return toast('Nothing new to copy from yesterday');
+  save();render(true);
+  const parts=[];if(np)parts.push(`${np} priorit${np>1?'ies':'y'}`);if(nd)parts.push(`${nd} brain dump`);
+  if(ns)parts.push(`${fmtLen(ns)} of schedule`);
+  toast('Copied '+parts.join(', '));
 };
 render(true);
 { let p=0; try{p=+localStorage.getItem('tb-panel')||0}catch(e){} requestAnimationFrame(()=>goPanel(p,false)); }
